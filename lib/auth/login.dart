@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:seller_app/auth/auth_screen.dart';
 import 'package:seller_app/global/global.dart';
 import 'package:seller_app/mainscreen/home_screen.dart';
 import 'package:seller_app/widgets/custom_text_field.dart';
@@ -27,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
       showDialog(
         context: context,
         builder: (c) {
-          return ErrorDialog(
+          return const ErrorDialog(
             message: "PLease Write email/password.",
           );
         },
@@ -39,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
     showDialog(
       context: context,
       builder: (c) {
-        return LoadingDialog(
+        return const LoadingDialog(
           message: "Checking Credentials",
         );
       },
@@ -69,17 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
       },
     );
     if (currentUser != null) {
-      readDataAndSetDataLocally(currentUser!).then(
-        (value) {
-          Navigator.pop(context);
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (c) => HomeScreen(),
-            ),
-          );
-        },
-      );
+      readDataAndSetDataLocally(currentUser!);
     }
   }
 
@@ -90,13 +81,41 @@ class _LoginScreenState extends State<LoginScreen> {
         .get()
         .then(
       (snapshot) async {
-        await sharedPreferences!.setString("uid", currentUser.uid);
-        await sharedPreferences!
-            .setString("email", snapshot.data()!["sellerEmail"]);
-        await sharedPreferences!
-            .setString("name", snapshot.data()!["sellerName"]);
-        await sharedPreferences!
-            .setString("photoUrl", snapshot.data()!["sellerAvatarUrl"]);
+        if (snapshot.exists) {
+          await sharedPreferences!.setString("uid", currentUser.uid);
+          await sharedPreferences!
+              .setString("email", snapshot.data()!["sellerEmail"]);
+          await sharedPreferences!
+              .setString("name", snapshot.data()!["sellerName"]);
+          await sharedPreferences!
+              .setString("photoUrl", snapshot.data()!["sellerAvatarUrl"]);
+          // ignore: use_build_context_synchronously
+          Navigator.pop(context);
+          // ignore: use_build_context_synchronously
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (c) => const HomeScreen(),
+            ),
+          );
+        } else {
+          firebaseAuth.signOut();
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (c) => const AuthScreen(),
+            ),
+          );
+          showDialog(
+            context: context,
+            builder: (c) {
+              return const ErrorDialog(
+                message: "Data Tidak ada",
+              );
+            },
+          );
+        }
       },
     );
   }
@@ -110,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Container(
             alignment: Alignment.bottomCenter,
             child: Padding(
-              padding: EdgeInsets.all(15),
+              padding: const EdgeInsets.all(15),
               child: Image.asset(
                 'images/seller.png',
                 height: 270,
